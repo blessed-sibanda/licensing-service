@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import me.blessedsibanda.license.model.Organization;
 import me.blessedsibanda.license.service.client.OrganizationDiscoveryClient;
+import me.blessedsibanda.license.service.client.OrganizationRestTemplateClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ public class LicenseService {
 
     @Autowired
     OrganizationDiscoveryClient organizationDiscoveryClient;
+
+    @Autowired
+    OrganizationRestTemplateClient organizationRestTemplateClient;
 
     public License createLicense(License license, String organizationId) {
         license.setLicenseId(UUID.randomUUID().toString());
@@ -82,6 +86,10 @@ public class LicenseService {
             case "discovery":
                 System.out.println("I am using the discovery client");
                 organization = organizationDiscoveryClient.getOrganization(organizationId);
+                break;
+            case "rest":
+                System.out.println("I am using the rest client");
+                organization = organizationRestTemplateClient.getOrganization(organizationId);
                 break;
             default:
                 organization = organizationDiscoveryClient.getOrganization(organizationId);
