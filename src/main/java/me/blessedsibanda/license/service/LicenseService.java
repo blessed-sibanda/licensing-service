@@ -2,6 +2,8 @@ package me.blessedsibanda.license.service;
 
 import java.util.UUID;
 
+import me.blessedsibanda.license.model.Organization;
+import me.blessedsibanda.license.service.client.OrganizationDiscoveryClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -21,16 +23,8 @@ public class LicenseService {
     @Autowired
     private ServiceConfig config;
 
-    public License getLicense(String licenseId, String organizationId) {
-        License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
-        if (license == null) {
-            throw new IllegalArgumentException(
-                    String.format(messages.getMessage("license.search.error.message", null, null), organizationId,
-                            licenseId));
-        }
-
-        return license.withComment(config.getProperty());
-    }
+    @Autowired
+    OrganizationDiscoveryClient organizationDiscoveryClient;
 
     public License createLicense(License license, String organizationId) {
         license.setLicenseId(UUID.randomUUID().toString());
@@ -56,5 +50,43 @@ public class LicenseService {
                 licenseId,
                 organizationId);
         return responseMessage;
+    }
+
+    public License getLicense(String licenseId, String organizationId, String clientType) {
+        License license =
+                licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId)
+;
+        if (license == null) {
+            throw new IllegalArgumentException(String.format(
+                    messages.getMessage("license.search.error.message", null, null),
+                    licenseId, organizationId
+            ));
+        }
+        Organization organization = retrieveOrganizationInfo(organizationId, clientType);
+
+        if (organization != null) {
+            license.setOrganizationName(organization.getName());
+            license.setContactName(organization.getName());
+            license.setContactEmail(organization.getContactEmail());
+            license.setContactPhone(organization.getContactPhone());
+        }
+        return license.withComment(config.getProperty());
+    }
+
+    private Organization retrieveOrganizationInfo(
+            String organizationId,
+            String clientType
+    ) {
+        Organization organization = null;
+        switch (clientType) {
+            case "discovery":
+                System.out.println("I am using the discovery client");
+                organization = organizationDiscoveryClient.getOrganization(organizationId);
+                break;
+            default:
+                organization = organizationDiscoveryClient.getOrganization(organizationId);
+                break;
+        }
+        return organization;
     }
 }
